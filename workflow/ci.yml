@@ -2,15 +2,17 @@ name: Frontend CI
 
 on:
   pull_request:
+    branches:
+      - main
     paths:
-      - 'frontend/**'  # Chạy khi có thay đổi trong thư mục frontend
+      - 'apjsa-fe/**'  # Thư mục frontend mới của bạn
 
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: apjsa-fe
 
     steps:
       - name: Checkout code
