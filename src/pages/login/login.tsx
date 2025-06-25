@@ -4,7 +4,7 @@ import { useAuth } from "../../store/AuthContext"
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: "",
   })
   const [error, setError] = useState("")
@@ -12,7 +12,7 @@ const Login = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const handleSubmit = async (e : any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
@@ -23,9 +23,10 @@ const Login = () => {
         // Redirect to profile or dashboard
         navigate("/")
       } else {
-        setError(result.error)
+        setError(result.error ?? "Unexpected error")
       }
     } catch (error) {
+      console.log(error)
       setError("Error connecting to server")
     } finally {
       setIsLoading(false)
@@ -68,8 +69,8 @@ const Login = () => {
             <input
               id="username"
               type="text"
-              value={credentials.username}
-              onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+              value={credentials.email}
+              onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
               required
               disabled={isLoading}
               placeholder="Enter your username"
