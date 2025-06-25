@@ -1,9 +1,8 @@
-import { createContext, useContext, useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { API_URL } from "../main"
+import { AuthContext } from "../context/AuthContext";
 
-// Create the auth context
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
 interface UserType {
   id: string;
   name: string;
@@ -44,7 +43,7 @@ interface PasswordData {
   newPassword: string
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: UserType | null
   loading: boolean
   error: string
@@ -62,6 +61,39 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const navigate = useNavigate()
+  // Logout function
+  const logout = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        localStorage.removeItem("accessToken")
+        localStorage.removeItem("refreshToken")
+        localStorage.removeItem("user")
+
+        setUser(null)
+        navigate("/")
+        alert(data.message)
+      } else {
+        alert(data.message || "Logout failed")
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+          await logout()
+        }
+      }
+    } catch (error) {
+      console.error("Error during logout:", error)
+      alert("An error occurred during logout")
+    }
+  }, [navigate])
 
   // Check if user is logged in on initial load
   useEffect(() => {
@@ -125,7 +157,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
     }
 
     checkLoggedIn()
-  }, [])
+  }, [logout])
 
   // Refresh token function (optional, if you want to implement token refresh logic)
   const refreshAccessToken = async () => {
@@ -243,46 +275,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
     }
   }
 
-  // Logout function
-  const logout = async () => {
-    // Clear localStorage
 
-    try {
-      // Gửi yêu cầu POST đến API logout
-      const response = await fetch(`${API_URL}/api/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`, // Lấy token từ localStorage
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Xóa token khỏi localStorage
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken"); // Nếu bạn cũng lưu refresh token
-        localStorage.removeItem("user")
-
-        // Clear state
-        setUser(null)
-        // Chuyển hướng đến trang đăng nhập
-        navigate("/");
-        alert(data.message); // Hiển thị thông báo đăng xuất thành công
-      } else {
-        // Xử lý lỗi từ API
-        alert(data.message || "Logout failed");
-        const refreshed = await refreshAccessToken()
-        if (refreshed) {
-          await logout();
-        }
-      }
-    } catch (error) {
-      console.error("Error during logout:", error);
-      alert("An error occurred during logout");
-    }
-  }
 
   // Get user profile data
   const getUserProfile = async () => {
@@ -417,13 +410,4 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-// Custom hook to use the auth context
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
 }
