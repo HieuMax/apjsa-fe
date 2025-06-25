@@ -3,11 +3,34 @@ import { useNavigate } from "react-router-dom"
 import { API_URL } from "../main"
 
 // Create the auth context
-const AuthContext = createContext(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface UserType {
+  id: string;
+  name: string;
+  mail: string;
+  role: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
+  iat: number;
+  username?: string;
+}
+interface AuthContextType {
+  user: any
+  loading: boolean
+  error: string
+  login: (credentials: any) => Promise<any>
+  logout: () => Promise<void>
+  isAuthenticated: () => boolean
+  getUserProfile: () => Promise<any>
+  updateProfile: (profileData: any) => Promise<any>
+  changePassword: (passwordData: any) => Promise<any>
+}
 
 // Provider component that wraps your app and makes auth object available to any child component that calls useAuth().
 export function AuthProvider({ children } : any) {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<UserType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const navigate = useNavigate()
@@ -285,13 +308,14 @@ export function AuthProvider({ children } : any) {
       
       // Update local user data if needed
       if (profileData.username) {
-        setUser(prev => ({
+        setUser((prev: UserType | null) => ({
           ...prev,
           username: profileData.username
-        }))
+        } as UserType))
         
         // Update localStorage
-        const storedUser = JSON.parse(localStorage.getItem("user"))
+        const userString = localStorage.getItem("user")
+        const storedUser = userString ? JSON.parse(userString) : null
         localStorage.setItem("user", JSON.stringify({
           ...storedUser,
           username: profileData.username
