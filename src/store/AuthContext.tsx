@@ -16,20 +16,48 @@ interface UserType {
   iat: number;
   username?: string;
 }
+
+interface LoginResponse {
+  accessToken: string
+  refreshToken: string
+  userId: string
+  name: string
+  mail: string
+  role: string
+  iat: number
+  address?: string
+  city?: string
+  state?: string
+  phone?: string
+}
+
+interface PasswordChangeResponse {
+  message: string
+}
+
+interface LoginCredentials {
+  email: string
+  password: string
+}
+interface PasswordData {
+  currentPassword: string
+  newPassword: string
+}
+
 interface AuthContextType {
-  user: any
+  user: UserType | null
   loading: boolean
   error: string
-  login: (credentials: any) => Promise<any>
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; data?: LoginResponse; error?: string }>
   logout: () => Promise<void>
   isAuthenticated: () => boolean
-  getUserProfile: () => Promise<any>
-  updateProfile: (profileData: any) => Promise<any>
-  changePassword: (passwordData: any) => Promise<any>
+  getUserProfile: () => Promise<{ success: boolean; data?: UserType; error?: string }>
+  updateProfile: (profileData: Partial<UserType>) => Promise<{ success: boolean; data?: UserType; error?: string }>
+  changePassword: (passwordData: PasswordData) => Promise<{ success: boolean; data?: PasswordChangeResponse; error?: string }>
 }
 
 // Provider component that wraps your app and makes auth object available to any child component that calls useAuth().
-export function AuthProvider({ children } : any) {
+export function AuthProvider({ children }: React.PropsWithChildren) {
   const [user, setUser] = useState<UserType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -157,7 +185,7 @@ export function AuthProvider({ children } : any) {
   };
 
   // Login function
-  const login = async (credentials : any) => {
+  const login = async (credentials : LoginCredentials) => {
     setError("")
     setLoading(true)
 
@@ -206,6 +234,7 @@ export function AuthProvider({ children } : any) {
         return { success: false, error: data.message || "Login failed" }
       }
     } catch (error) {
+      console.log(error)
       const errorMessage = "Error connecting to server"
       setError(errorMessage)
       return { success: false, error: errorMessage }
@@ -276,14 +305,17 @@ export function AuthProvider({ children } : any) {
 
       const data = await response.json()
       return { success: true, data }
-    } catch (error : any) {
-      console.error("Error fetching user profile:", error)
-      return { success: false, error: error.message }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message }
+      } else {
+        return { success: false, error: "Unknown error" }
+      }
     }
   }
 
   // Update user profile
-  const updateProfile = async (profileData : any) => {
+  const updateProfile = async (profileData: Partial<UserType>) => {
     try {
       const accessToken = localStorage.getItem("accessToken")
       
@@ -323,14 +355,17 @@ export function AuthProvider({ children } : any) {
       }
       
       return { success: true, data }
-    } catch (error : any) {
-      console.error("Error updating profile:", error)
-      return { success: false, error: error.message }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message }
+      } else {
+        return { success: false, error: "Unknown error" }
+      }
     }
   }
 
   // Change password
-  const changePassword = async (passwordData : any) => {
+  const changePassword = async (passwordData : PasswordData) => {
     try {
       const accessToken = localStorage.getItem("accessToken")
       
@@ -354,9 +389,12 @@ export function AuthProvider({ children } : any) {
 
       const data = await response.json()
       return { success: true, data }
-    } catch (error : any) {
-      console.error("Error changing password:", error)
-      return { success: false, error: error.message }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { success: false, error: error.message }
+      } else {
+        return { success: false, error: "Unknown error" }
+      }
     }
   }
 
