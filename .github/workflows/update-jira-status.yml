@@ -23,5 +23,5 @@ jobs:
           curl -X POST \
             -H "Authorization: Basic ${{ secrets.JIRA_AUTH }}" \
             -H "Content-Type: application/json" \
-            --data '{"transition":{"id":"10002"}}' \
+            --data '{"transition":{"id":"31"}}' \
             "https://sedp-gr6.atlassian.net/rest/api/3/issue/${ISSUE_KEY}/transitions"
