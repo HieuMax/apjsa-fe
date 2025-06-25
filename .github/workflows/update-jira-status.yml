@@ -1,0 +1,27 @@
+name: Update Jira Ticket on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  update-jira:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract Issue Key from branch name
+        id: extract
+        run: |
+          echo "Extracting issue key from branch: ${{ github.event.pull_request.head.ref }}"
+          ISSUE_KEY=$(echo "${{ github.event.pull_request.head.ref }}" | grep -o '[A-Z]\+-[0-9]\+')
+          echo "ISSUE_KEY=${ISSUE_KEY}" >> $GITHUB_ENV
+
+      - name: Transition Jira Issue to QA Ready
+        run: |
+          echo "Transitioning issue ${ISSUE_KEY} to QA Ready..."
+          curl -X POST \
+            -H "Authorization: Basic ${{ secrets.JIRA_AUTH }}" \
+            -H "Content-Type: application/json" \
+            --data '{"transition":{"id":"10002"}}' \
+            "https://sedp-gr6.atlassian.net/rest/api/3/issue/${ISSUE_KEY}/transitions"
